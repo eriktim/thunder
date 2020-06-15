@@ -10,7 +10,9 @@ import zio.interop.catz._
 import zio.logging._
 
 object Knmi {
-  trait Service {}
+  trait Service {
+    def getData(stations: List[Int]): IO[Throwable, String]
+  }
 
   val live = {
     val managedClient = ZIO
@@ -36,5 +38,30 @@ object Knmi {
 final class Knmi(val client: Client[Task], val logger: Logger[_]) {
   import Knmi._
 
-  val service = new Knmi.Service() {}
+  val service = new Knmi.Service() {
+    override def getData(
+        stations: List[Int]
+    ): IO[Throwable, String] = {
+      IO("big ass csv")
+      //   val path = s"/repos/$fullName/contributors"
+      //   val request =
+      //     Request[Task](
+      //       Method.GET,
+      //       baseUrl.addPath(path),
+      //       headers = headers(token)
+      //     )
+      //   client
+      //     .expect[List[Contributor]](request)
+      //     .flatMapError {
+      //       case UnexpectedStatus(status) =>
+      //         logger
+      //           .error(s"$path returned $status")
+      //           .map(_ => GithubApiRequestFailed)
+      //       case error =>
+      //         logger
+      //           .error(s"$path errored: ${error.getMessage()}")
+      //           .map(_ => GithubApiRequestFailed)
+      //     }
+    }
+  }
 }
