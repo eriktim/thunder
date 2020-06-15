@@ -1,67 +1,38 @@
 package io.timmers.thunder
 
-import org.http4s._
-import org.http4s.circe._
-import org.http4s.client._
-import org.http4s.client.blaze._
-import org.http4s.implicits._
+import sttp.client._
+import sttp.client.circe._
+import sttp.client.asynchttpclient.zio._
+import sttp.client.asynchttpclient.WebSocketHandler
 import zio._
-import zio.interop.catz._
 import zio.logging._
 
 object Knmi {
+  val resourceUri =
+    uri"http://projects.knmi.nl/klimatologie/uurgegevens/getdata_uur.cgi"
+
   trait Service {
     def getData(stations: List[Int]): IO[Throwable, String]
   }
 
-  val live = {
-    val managedClient = ZIO
-      .runtime[Any]
-      .map { implicit rt =>
-        val exec = rt.platform.executor.asEC
-        catsIOResourceSyntax(
-          BlazeClientBuilder[Task](exec).resource
-        ).toManaged
+  type KnmiService = Has[Service]
+
+  val live: ZLayer[SttpClient, Nothing, KnmiService] =
+    ZLayer.fromService { sttpClient =>
+      new Service {
+        def getData(stations: List[Int]): Task[String] = {
+          val day = "20200615"
+          val stns = stations.map(_.toString()).mkString(":")
+          val body =
+            Map("start" -> s"${day}01", "end" -> s"${day}24", "stns" -> stns)
+          val request = basicRequest
+            .post(resourceUri)
+            .body(body)
+          sttpClient.send(request).map(_.body.getOrElse("TODO"))
+        }
       }
-      .toManaged_
-      .flatten
-
-    ZLayer.fromManaged {
-      for {
-        logger <- ZIO.access[Logging](_.get).toManaged_
-        client <- managedClient
-      } yield new Knmi(client, logger).service
     }
-  }
-}
 
-final class Knmi(val client: Client[Task], val logger: Logger[_]) {
-  import Knmi._
-
-  val service = new Knmi.Service() {
-    override def getData(
-        stations: List[Int]
-    ): IO[Throwable, String] = {
-      IO("big ass csv")
-      //   val path = s"/repos/$fullName/contributors"
-      //   val request =
-      //     Request[Task](
-      //       Method.GET,
-      //       baseUrl.addPath(path),
-      //       headers = headers(token)
-      //     )
-      //   client
-      //     .expect[List[Contributor]](request)
-      //     .flatMapError {
-      //       case UnexpectedStatus(status) =>
-      //         logger
-      //           .error(s"$path returned $status")
-      //           .map(_ => GithubApiRequestFailed)
-      //       case error =>
-      //         logger
-      //           .error(s"$path errored: ${error.getMessage()}")
-      //           .map(_ => GithubApiRequestFailed)
-      //     }
-    }
-  }
+  val liveEnvironment: ZLayer[Any, Throwable, KnmiService] =
+    AsyncHttpClientZioBackend.layer() >>> Knmi.live
 }

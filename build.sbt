@@ -19,8 +19,7 @@ scalafixDependencies in ThisBuild += "com.nequissimus" %% "sort-imports" % "0.3.
 
 val zioVersion = "1.0.0-RC20"
 val zioLoggingVersion = "0.3.1"
-val zioCatsVersion = "2.1.3.0-RC15"
-val http4sVersion = "0.21.4"
+val sttpVersion = "2.1.4"
 val circeVersion = "0.13.0"
 val scalaTestVersion = "3.1.2"
 
@@ -35,10 +34,8 @@ lazy val root = (project in file("."))
       "dev.zio" %% "zio-logging" % zioLoggingVersion,
       "dev.zio" %% "zio-test" % zioVersion % Test,
       "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
-      "dev.zio" %% "zio-interop-cats" % zioCatsVersion,
-      "org.http4s" %% "http4s-blaze-client" % http4sVersion,
-      "org.http4s" %% "http4s-circe" % http4sVersion,
-      "org.http4s" %% "http4s-dsl" % http4sVersion,
+      "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
+      "com.softwaremill.sttp.client" %% "circe" % sttpVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-generic-extras" % circeVersion,
       "io.circe" %% "circe-literal" % circeVersion,
